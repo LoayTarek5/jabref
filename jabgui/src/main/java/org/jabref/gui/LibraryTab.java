@@ -171,6 +171,7 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
 
     private final ClipBoardManager clipBoardManager;
     private final TaskExecutor taskExecutor;
+    private final GitHandlerRegistry gitHandlerRegistry;
 
     private final AiService aiService;
 
@@ -195,6 +196,7 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
                        GuiUndoManager undoManager,
                        ClipBoardManager clipBoardManager,
                        TaskExecutor taskExecutor,
+                       GitHandlerRegistry gitHandlerRegistry,
                        boolean isDummyContext) {
         this.bibDatabaseContext = bibDatabaseContext;
         this.tabContainer = tabContainer;
@@ -207,6 +209,7 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
         this.entryTypesManager = entryTypesManager;
         this.clipBoardManager = clipBoardManager;
         this.taskExecutor = taskExecutor;
+        this.gitHandlerRegistry = gitHandlerRegistry;
         this.aiService = aiService;
 
         this.journalAbbreviationRepository = Injector.instantiateModelOrService(JournalAbbreviationRepository.class);
@@ -411,7 +414,7 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
                 preferences,
                 stateManager,
                 taskExecutor,
-                Injector.instantiateModelOrService(GitHandlerRegistry.class),
+                gitHandlerRegistry,
                 this::isModified);
     }
 
@@ -1159,7 +1162,8 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
                                               BibEntryTypesManager entryTypesManager,
                                               GuiUndoManager undoManager,
                                               ClipBoardManager clipBoardManager,
-                                              TaskExecutor taskExecutor) {
+                                              TaskExecutor taskExecutor,
+                                              GitHandlerRegistry gitHandlerRegistry) {
         BibDatabaseContext context = new BibDatabaseContext();
         context.setDatabasePath(file);
 
@@ -1175,6 +1179,7 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
                 undoManager,
                 clipBoardManager,
                 taskExecutor,
+                gitHandlerRegistry,
                 true);
 
         newTab.setDataLoadingTask(dataLoadingTask);
@@ -1195,7 +1200,8 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
                                               BibEntryTypesManager entryTypesManager,
                                               GuiUndoManager undoManager,
                                               ClipBoardManager clipBoardManager,
-                                              TaskExecutor taskExecutor) {
+                                              TaskExecutor taskExecutor,
+                                              GitHandlerRegistry gitHandlerRegistry) {
         return new LibraryTab(
                 databaseContext,
                 tabContainer,
@@ -1208,6 +1214,7 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
                 undoManager,
                 clipBoardManager,
                 taskExecutor,
+                gitHandlerRegistry,
                 false);
     }
 
