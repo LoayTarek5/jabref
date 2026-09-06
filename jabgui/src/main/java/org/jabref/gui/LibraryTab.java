@@ -59,6 +59,7 @@ import org.jabref.logic.ai.AiService;
 import org.jabref.logic.citationstyle.CitationStyleCache;
 import org.jabref.logic.command.CommandSelectionTab;
 import org.jabref.logic.git.diff.GitDiffChecker;
+import org.jabref.logic.git.util.GitHandlerRegistry;
 import org.jabref.logic.importer.FetcherClientException;
 import org.jabref.logic.importer.FetcherException;
 import org.jabref.logic.importer.FetcherServerException;
@@ -405,7 +406,13 @@ public class LibraryTab extends Tab implements CommandSelectionTab {
             BackupManager.start(this, bibDatabaseContext, coarseChangeFilter, Injector.instantiateModelOrService(BibEntryTypesManager.class), preferences);
         }
 
-        GitPullScheduler.start(bibDatabaseContext, dialogService, preferences, stateManager, taskExecutor, this::isModified);
+        GitPullScheduler.start(bibDatabaseContext,
+                dialogService,
+                preferences,
+                stateManager,
+                taskExecutor,
+                Injector.instantiateModelOrService(GitHandlerRegistry.class),
+                this::isModified);
     }
 
     private boolean isDatabaseReadyForAutoSave(BibDatabaseContext context) {

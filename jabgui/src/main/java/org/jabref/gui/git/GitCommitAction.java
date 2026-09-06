@@ -14,7 +14,6 @@ import org.jabref.gui.StateManager;
 import org.jabref.gui.actions.ActionHelper;
 import org.jabref.gui.actions.SimpleCommand;
 import org.jabref.gui.exporter.SaveDatabaseAction;
-import org.jabref.gui.exporter.SaveDatabaseAction.AutoCommit;
 import org.jabref.gui.exporter.SaveDatabaseAction.SaveDatabaseMode;
 import org.jabref.gui.exporter.SaveDatabaseAction.SaveResult;
 import org.jabref.gui.preferences.GuiPreferences;
@@ -168,7 +167,9 @@ public class GitCommitAction extends SimpleCommand {
                 preferences,
                 entryTypesManager,
                 stateManager,
-                journalAbbreviationRepository).save(SaveDatabaseMode.NORMAL, AutoCommit.DISABLED);
+                journalAbbreviationRepository,
+                gitHandlerRegistry,
+                taskExecutor).saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL);
         if (saveResult == SaveResult.ALREADY_SAVING) {
             // A save is still running (e.g. autosave), so the file on disk is not yet what the user sees.
             dialogService.notify(Localization.lang("The library is currently being saved. Please try again."));

@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.jabref.gui.DialogService;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.preferences.GuiPreferences;
+import org.jabref.logic.git.preferences.GitPreferences;
+import org.jabref.logic.git.util.GitHandlerRegistry;
 import org.jabref.logic.util.CurrentThreadTaskExecutor;
 import org.jabref.model.database.BibDatabaseContext;
 
@@ -57,6 +59,7 @@ class GitPullSchedulerTest {
                 mock(GuiPreferences.class, RETURNS_DEEP_STUBS),
                 mock(StateManager.class),
                 new CurrentThreadTaskExecutor(),
+                new GitHandlerRegistry(mock(GitPreferences.class)),
                 () -> false);
     }
 }

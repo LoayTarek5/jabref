@@ -41,7 +41,7 @@ class GitAutoSyncTest {
 
     @Test
     void commitDoesNothingOutsideGitRepository() {
-        gitAutoSync.commit(BIB_FILE, mock(BibDatabaseContext.class), true);
+        gitAutoSync.commit(BIB_FILE, mock(BibDatabaseContext.class));
 
         verifyNoInteractions(dialogService);
     }

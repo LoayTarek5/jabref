@@ -19,7 +19,7 @@ public class GitTab extends AbstractPreferenceTabView<GitTabViewModel> {
             "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens";
 
     public GitTab() {
-        this.viewModel = new GitTabViewModel(dialogService, preferences.getGitPreferences());
+        this.viewModel = new GitTabViewModel(preferences.getGitPreferences());
         buildView();
     }
 

@@ -16,7 +16,6 @@ import org.jabref.gui.JabRefGuiStateManager;
 import org.jabref.gui.LibraryTab;
 import org.jabref.gui.StateManager;
 import org.jabref.gui.exporter.SaveDatabaseAction;
-import org.jabref.gui.exporter.SaveDatabaseAction.AutoCommit;
 import org.jabref.gui.exporter.SaveDatabaseAction.SaveDatabaseMode;
 import org.jabref.gui.exporter.SaveDatabaseAction.SaveResult;
 import org.jabref.gui.preferences.GuiPreferences;
@@ -88,12 +87,12 @@ class GitCommitActionTest {
         when(libraryTab.isModified()).thenReturn(true);
 
         try (MockedConstruction<SaveDatabaseAction> saveDatabaseAction = mockConstruction(SaveDatabaseAction.class,
-                (mockedSave, _) -> when(mockedSave.save(SaveDatabaseMode.NORMAL, SaveDatabaseAction.AutoCommit.DISABLED)).thenReturn(SaveResult.SUCCESS))) {
+                (mockedSave, _) -> when(mockedSave.saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL)).thenReturn(SaveResult.SUCCESS))) {
             gitCommitAction.execute();
 
             SaveDatabaseAction save = saveDatabaseAction.constructed().getFirst();
             InOrder inOrder = inOrder(save, stateManager);
-            inOrder.verify(save).save(SaveDatabaseMode.NORMAL, SaveDatabaseAction.AutoCommit.DISABLED);
+            inOrder.verify(save).saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL);
             inOrder.verify(stateManager).getActiveDatabase();
         }
     }
@@ -149,10 +148,10 @@ class GitCommitActionTest {
         clickButton(Localization.lang("Save and commit"));
 
         try (MockedConstruction<SaveDatabaseAction> saveDatabaseAction = mockConstruction(SaveDatabaseAction.class,
-                (mockedSave, _) -> when(mockedSave.save(SaveDatabaseMode.NORMAL, AutoCommit.DISABLED)).thenReturn(SaveResult.SUCCESS))) {
+                (mockedSave, _) -> when(mockedSave.saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL)).thenReturn(SaveResult.SUCCESS))) {
             gitCommitAction.execute();
 
-            verify(saveDatabaseAction.constructed().getFirst()).save(SaveDatabaseMode.NORMAL, AutoCommit.DISABLED);
+            verify(saveDatabaseAction.constructed().getFirst()).saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL);
             verify(stateManager).getActiveDatabase();
         }
     }
@@ -165,7 +164,7 @@ class GitCommitActionTest {
         clickButton(Localization.lang("Save and commit"));
 
         try (MockedConstruction<SaveDatabaseAction> saveDatabaseAction = mockConstruction(SaveDatabaseAction.class,
-                (mockedSave, _) -> when(mockedSave.save(SaveDatabaseMode.NORMAL, AutoCommit.DISABLED)).thenReturn(SaveResult.FAILURE))) {
+                (mockedSave, _) -> when(mockedSave.saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL)).thenReturn(SaveResult.FAILURE))) {
             gitCommitAction.execute();
 
             verify(stateManager, never()).getActiveDatabase();
@@ -178,10 +177,10 @@ class GitCommitActionTest {
         when(libraryTab.isModified()).thenReturn(true);
 
         try (MockedConstruction<SaveDatabaseAction> saveDatabaseAction = mockConstruction(SaveDatabaseAction.class,
-                (mockedSave, _) -> when(mockedSave.save(SaveDatabaseMode.NORMAL, SaveDatabaseAction.AutoCommit.DISABLED)).thenReturn(saveResult))) {
+                (mockedSave, _) -> when(mockedSave.saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL)).thenReturn(saveResult))) {
             gitCommitAction.execute();
 
-            verify(saveDatabaseAction.constructed().getFirst()).save(SaveDatabaseMode.NORMAL, SaveDatabaseAction.AutoCommit.DISABLED);
+            verify(saveDatabaseAction.constructed().getFirst()).saveWithoutGitAutoCommit(SaveDatabaseMode.NORMAL);
             verify(stateManager, never()).getActiveDatabase();
             verify(dialogService, never()).showCustomDialogAndWait(any(Dialog.class));
         }

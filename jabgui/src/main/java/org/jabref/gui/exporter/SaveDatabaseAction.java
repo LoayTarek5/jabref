@@ -69,6 +69,8 @@ public class SaveDatabaseAction {
     private final BibEntryTypesManager entryTypesManager;
     private final StateManager stateManager;
     private final JournalAbbreviationRepository journalAbbreviationRepository;
+    private final GitHandlerRegistry gitHandlerRegistry;
+    private final TaskExecutor taskExecutor;
 
     public enum SaveDatabaseMode {
         SILENT, NORMAL
@@ -80,10 +82,20 @@ public class SaveDatabaseAction {
         SUCCESS, FAILURE, ALREADY_SAVING
     }
 
-    /// Whether a successful save may trigger the automatic Git commit configured in the library properties.
-    /// `DISABLED` is for saves that are themselves part of a Git operation, which would otherwise commit twice.
-    public enum AutoCommit {
-        ENABLED, DISABLED
+    public SaveDatabaseAction(LibraryTab libraryTab,
+                              DialogService dialogService,
+                              GuiPreferences preferences,
+                              BibEntryTypesManager entryTypesManager,
+                              StateManager stateManager,
+                              JournalAbbreviationRepository journalAbbreviationRepository) {
+        this(libraryTab,
+                dialogService,
+                preferences,
+                entryTypesManager,
+                stateManager,
+                journalAbbreviationRepository,
+                Injector.instantiateModelOrService(GitHandlerRegistry.class),
+                Injector.instantiateModelOrService(TaskExecutor.class));
     }
 
     public SaveDatabaseAction(LibraryTab libraryTab,
@@ -91,13 +103,17 @@ public class SaveDatabaseAction {
                               GuiPreferences preferences,
                               BibEntryTypesManager entryTypesManager,
                               StateManager stateManager,
-                              JournalAbbreviationRepository journalAbbreviationRepository) {
+                              JournalAbbreviationRepository journalAbbreviationRepository,
+                              GitHandlerRegistry gitHandlerRegistry,
+                              TaskExecutor taskExecutor) {
         this.libraryTab = libraryTab;
         this.dialogService = dialogService;
         this.preferences = preferences;
         this.entryTypesManager = entryTypesManager;
         this.stateManager = stateManager;
         this.journalAbbreviationRepository = journalAbbreviationRepository;
+        this.gitHandlerRegistry = gitHandlerRegistry;
+        this.taskExecutor = taskExecutor;
     }
 
     public SaveResult save() {
@@ -105,11 +121,12 @@ public class SaveDatabaseAction {
     }
 
     public SaveResult save(SaveDatabaseMode mode) {
-        return save(mode, AutoCommit.ENABLED);
+        return save(libraryTab.getBibDatabaseContext(), mode, true);
     }
 
-    public SaveResult save(SaveDatabaseMode mode, AutoCommit autoCommit) {
-        return save(libraryTab.getBibDatabaseContext(), mode, autoCommit);
+    /// Saves the library without triggering the automatic Git commit configured in the library properties.
+    public SaveResult saveWithoutGitAutoCommit(SaveDatabaseMode mode) {
+        return save(libraryTab.getBibDatabaseContext(), mode, false);
     }
 
     /// Asks the user for the path and saves afterward
@@ -156,12 +173,12 @@ public class SaveDatabaseAction {
     }
 
     boolean saveAs(Path file, SaveDatabaseMode mode) {
-        return saveAs(file, mode, AutoCommit.ENABLED);
+        return saveAs(file, mode, true);
     }
 
     /// @param file the new file name to save the database to. This is stored in the database context of the panel upon successful save.
     /// @return true on successful save
-    boolean saveAs(Path file, SaveDatabaseMode mode, AutoCommit autoCommit) {
+    boolean saveAs(Path file, SaveDatabaseMode mode, boolean mayAutoCommit) {
         BibDatabaseContext context = libraryTab.getBibDatabaseContext();
 
         boolean managersShutDown = context.getDatabasePath().isPresent();
@@ -180,7 +197,7 @@ public class SaveDatabaseAction {
                     .putAllDBMSConnectionProperties(context.getDBMSSynchronizer().getConnectionProperties());
         }
 
-        SaveResult saveResult = save(file, mode, autoCommit);
+        SaveResult saveResult = save(file, mode, mayAutoCommit);
         if (saveResult == SaveResult.ALREADY_SAVING) {
             // Nothing was written to the new file, so the library has to keep pointing at the old one.
             dialogService.notify(Localization.lang("The library is currently being saved. Please try again."));
@@ -236,17 +253,17 @@ public class SaveDatabaseAction {
         return selectedPath;
     }
 
-    private SaveResult save(BibDatabaseContext bibDatabaseContext, SaveDatabaseMode mode, AutoCommit autoCommit) {
+    private SaveResult save(BibDatabaseContext bibDatabaseContext, SaveDatabaseMode mode, boolean mayAutoCommit) {
         Optional<Path> databasePath = bibDatabaseContext.getDatabasePath();
         if (databasePath.isEmpty()) {
             Optional<Path> savePath = askForSavePath();
-            return savePath.filter(path -> saveAs(path, mode, autoCommit)).isPresent() ? SaveResult.SUCCESS : SaveResult.FAILURE;
+            return savePath.filter(path -> saveAs(path, mode, mayAutoCommit)).isPresent() ? SaveResult.SUCCESS : SaveResult.FAILURE;
         }
 
-        return save(databasePath.get(), mode, autoCommit);
+        return save(databasePath.get(), mode, mayAutoCommit);
     }
 
-    private SaveResult save(Path targetPath, SaveDatabaseMode mode, AutoCommit autoCommit) {
+    private SaveResult save(Path targetPath, SaveDatabaseMode mode, boolean mayAutoCommit) {
         if (mode == SaveDatabaseMode.NORMAL && libraryTab.getBibDatabaseContext().getEntries().size() > 2_000) {
             dialogService.notify("%s...".formatted(Localization.lang("Saving library")));
         }
@@ -275,7 +292,7 @@ public class SaveDatabaseAction {
 
             libraryTab.getUndoManager().markUnchanged();
             libraryTab.resetChangedProperties(committedState);
-            if (autoCommit == AutoCommit.ENABLED) {
+            if (mayAutoCommit) {
                 commitToGit(targetPath);
             }
             dialogService.notify(Localization.lang("Library saved"));
@@ -305,12 +322,16 @@ public class SaveDatabaseAction {
         if (!databaseContext.getMetaData().isGitAutoCommit()) {
             return;
         }
-        new GitAutoSync(dialogService,
-                Injector.instantiateModelOrService(GitHandlerRegistry.class),
-                Injector.instantiateModelOrService(TaskExecutor.class),
+        GitAutoSync gitAutoSync = new GitAutoSync(dialogService,
+                gitHandlerRegistry,
+                taskExecutor,
                 preferences,
-                stateManager)
-                .commit(targetPath, databaseContext, databaseContext.getMetaData().isGitAutoPush());
+                stateManager);
+        if (databaseContext.getMetaData().isGitAutoPush()) {
+            gitAutoSync.commitAndPush(targetPath, databaseContext);
+        } else {
+            gitAutoSync.commit(targetPath, databaseContext);
+        }
     }
 
     /// @return the state of the file as committed by this save (or by its encoding retry), `null` when unreadable

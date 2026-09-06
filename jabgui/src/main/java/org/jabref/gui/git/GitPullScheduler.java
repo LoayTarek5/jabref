@@ -16,7 +16,6 @@ import org.jabref.logic.git.util.GitHandlerRegistry;
 import org.jabref.logic.util.TaskExecutor;
 import org.jabref.model.database.BibDatabaseContext;
 
-import com.airhacks.afterburner.injection.Injector;
 import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +56,7 @@ public class GitPullScheduler {
                 return;
             }
             bibDatabaseContext.getDatabasePath().ifPresent(path -> gitAutoSync.pull(path, bibDatabaseContext, hasUnsavedChanges));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.warn("Scheduled Git pull failed", e);
         }
     }
@@ -72,6 +71,7 @@ public class GitPullScheduler {
                              GuiPreferences preferences,
                              StateManager stateManager,
                              TaskExecutor taskExecutor,
+                             GitHandlerRegistry gitHandlerRegistry,
                              BooleanSupplier hasUnsavedChanges) {
 
         Optional<Path> databasePath = bibDatabaseContext.getDatabasePath();
@@ -90,7 +90,7 @@ public class GitPullScheduler {
         }
 
         GitAutoSync gitAutoSync = new GitAutoSync(dialogService,
-                Injector.instantiateModelOrService(GitHandlerRegistry.class),
+                gitHandlerRegistry,
                 taskExecutor,
                 preferences,
                 stateManager);

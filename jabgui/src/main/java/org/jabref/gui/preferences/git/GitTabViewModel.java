@@ -8,7 +8,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
-import org.jabref.gui.DialogService;
 import org.jabref.gui.preferences.PreferenceTabViewModel;
 import org.jabref.logic.git.preferences.GitPreferences;
 import org.jabref.logic.l10n.Localization;
@@ -28,13 +27,11 @@ public class GitTabViewModel implements PreferenceTabViewModel {
     private final BooleanProperty passwordPersistAvailable = new SimpleBooleanProperty();
     private final StringProperty pullIntervalInMinutesProperty = new SimpleStringProperty("");
 
-    private final DialogService dialogService;
     private final GitPreferences gitPreferences;
 
     private final Validator pullIntervalValidator;
 
-    public GitTabViewModel(DialogService dialogService, GitPreferences gitPreferences) {
-        this.dialogService = dialogService;
+    public GitTabViewModel(GitPreferences gitPreferences) {
         this.gitPreferences = gitPreferences;
 
         pullIntervalValidator = new FunctionBasedValidator<>(
@@ -65,12 +62,7 @@ public class GitTabViewModel implements PreferenceTabViewModel {
 
     @Override
     public boolean validateSettings() {
-        ValidationStatus status = pullIntervalValidator.getValidationStatus();
-        if (!status.isValid()) {
-            status.getHighestMessage().ifPresent(message -> dialogService.showErrorDialogAndWait(message.getMessage()));
-            return false;
-        }
-        return true;
+        return pullIntervalValidator.getValidationStatus().isValid();
     }
 
     private Optional<Integer> getIntervalAsInt(String value) {

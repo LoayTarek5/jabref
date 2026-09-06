@@ -113,7 +113,13 @@ public class GitShareToGitHubDialogView extends BaseDialog<Void> {
     /// cannot have been started when the library was opened
     private void onShared() {
         stateManager.activeTabProperty().get().ifPresent(tab ->
-                GitPullScheduler.start(tab.getBibDatabaseContext(), dialogService, preferences, stateManager, taskExecutor, tab::isModified));
+                GitPullScheduler.start(tab.getBibDatabaseContext(),
+                        dialogService,
+                        preferences,
+                        stateManager,
+                        taskExecutor,
+                        gitHandlerRegistry,
+                        tab::isModified));
         close();
     }
 

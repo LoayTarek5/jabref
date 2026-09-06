@@ -61,9 +61,19 @@ public class GitAutoSync {
         this.stateManager = stateManager;
     }
 
-    /// Commits the library if it is inside a Git repository, and pushes afterwards if requested.
+    /// Commits the library if it is inside a Git repository.
     /// does nothing if the library file is unchanged
-    public void commit(Path bibFilePath, BibDatabaseContext databaseContext, boolean pushAfterCommit) {
+    public void commit(Path bibFilePath, BibDatabaseContext databaseContext) {
+        commit(bibFilePath, databaseContext, false);
+    }
+
+    /// Commits the library if it is inside a Git repository, and pushes afterwards.
+    /// does nothing if the library file is unchanged
+    public void commitAndPush(Path bibFilePath, BibDatabaseContext databaseContext) {
+        commit(bibFilePath, databaseContext, true);
+    }
+
+    private void commit(Path bibFilePath, BibDatabaseContext databaseContext, boolean pushAfterCommit) {
         gitHandlerRegistry.fromAnyPath(bibFilePath).ifPresent(gitHandler ->
                 BackgroundTask.wrap(() -> doCommit(gitHandler, bibFilePath))
                               .onSuccess(committed -> {
@@ -172,9 +182,9 @@ public class GitAutoSync {
             dialogService.notify(Localization.lang("Fast-forwarded to remote."));
         } else if (!autoPlan.isEmpty()) {
             dialogService.notify(Localization.lang("Auto-applied changes: %0 new, %1 modified, %2 deleted.",
-                    String.valueOf(autoPlan.newEntries().size()),
-                    String.valueOf(autoPlan.fieldPatches().size()),
-                    String.valueOf(autoPlan.deletedEntryKeys().size())));
+                    autoPlan.newEntries().size(),
+                    autoPlan.fieldPatches().size(),
+                    autoPlan.deletedEntryKeys().size()));
         }
     }
 

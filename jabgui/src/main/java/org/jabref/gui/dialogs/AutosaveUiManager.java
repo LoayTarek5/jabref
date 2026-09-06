@@ -28,7 +28,7 @@ public class AutosaveUiManager {
     public void listen(AutosaveEvent event) {
         try {
             // Autosave runs while the user types, committing and pushing here would produce a stream of near identical commits
-            this.saveDatabaseAction.save(SaveDatabaseAction.SaveDatabaseMode.SILENT, SaveDatabaseAction.AutoCommit.DISABLED);
+            this.saveDatabaseAction.saveWithoutGitAutoCommit(SaveDatabaseAction.SaveDatabaseMode.SILENT);
         } catch (Throwable e) {
             LOGGER.error("Problem occurred while saving.", e);
         }
