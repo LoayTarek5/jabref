@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox;
 import org.jabref.gui.collab.DatabaseChangeDetailsView;
 import org.jabref.gui.mergeentries.threewaymerge.diffhighlighter.DiffHighlighter;
 import org.jabref.gui.mergeentries.threewaymerge.diffhighlighter.SplitDiffHighlighter;
+import org.jabref.gui.theme.StyleClasses;
 import org.jabref.logic.bibtex.comparator.MetaDataDiff;
 import org.jabref.logic.citationkeypattern.GlobalCitationKeyPatterns;
 import org.jabref.logic.l10n.Localization;
@@ -20,22 +21,23 @@ import org.fxmisc.richtext.StyleClassedTextArea;
 public final class MetadataChangeDetailsView extends DatabaseChangeDetailsView {
 
     public MetadataChangeDetailsView(MetadataChange metadataChange, GlobalCitationKeyPatterns globalCitationKeyPatterns) {
-        this(metadataChange, globalCitationKeyPatterns, Localization.lang("In JabRef"), Localization.lang("On disk"));
+        this(metadataChange, globalCitationKeyPatterns, Localization.lang("In JabRef"), Localization.lang("On disk"), DiffHighlighter.BasicDiffMethod.CHARS);
     }
 
     public MetadataChangeDetailsView(MetadataChange metadataChange,
                                      GlobalCitationKeyPatterns globalCitationKeyPatterns,
                                      String leftLabelText,
-                                     String rightLabelText) {
+                                     String rightLabelText,
+                                     DiffHighlighter.BasicDiffMethod diffMethod) {
         VBox container = new VBox(15);
 
         Label header = new Label(Localization.lang("The following metadata changed:"));
-        header.getStyleClass().add("sectionHeader");
+        header.getStyleClass().addAll(StyleClasses.SECTION_HEADER);
         container.getChildren().add(header);
 
         // Add views for each detected difference
         for (MetaDataDiff.Difference diff : metadataChange.getMetaDataDiff().getDifferences(globalCitationKeyPatterns)) {
-            addDifferenceView(container, diff, metadataChange, leftLabelText, rightLabelText);
+            addDifferenceView(container, diff, metadataChange, leftLabelText, rightLabelText, diffMethod);
         }
 
         this.setAllAnchorsAndAttachChild(container);
@@ -51,14 +53,15 @@ public final class MetadataChangeDetailsView extends DatabaseChangeDetailsView {
                                    MetaDataDiff.Difference diff,
                                    MetadataChange metadataChange,
                                    String leftLabelText,
-                                   String rightLabelText) {
+                                   String rightLabelText,
+                                   DiffHighlighter.BasicDiffMethod diffMethod) {
         Label typeLabel = new Label(getDifferenceString(diff.differenceType()));
         typeLabel.getStyleClass().add("diff-type-label");
         container.getChildren().add(typeLabel);
 
         // Show appropriate view based on difference type
         if (diff.differenceType() == MetaDataDiff.DifferenceType.GROUPS) {
-            container.getChildren().add(createGroupDiffSplitPane(metadataChange, leftLabelText, rightLabelText));
+            container.getChildren().add(createGroupDiffSplitPane(metadataChange, leftLabelText, rightLabelText, diffMethod));
         } else {
             container.getChildren().add(createDefaultDiffScrollPane(diff));
         }
@@ -84,7 +87,7 @@ public final class MetadataChangeDetailsView extends DatabaseChangeDetailsView {
     ///
     /// @param metadataChange The metadata change containing groups differences
     /// @return Configured SplitPane showing groups differences
-    private SplitPane createGroupDiffSplitPane(MetadataChange metadataChange, String leftLabelText, String rightLabelText) {
+    private SplitPane createGroupDiffSplitPane(MetadataChange metadataChange, String leftLabelText, String rightLabelText, DiffHighlighter.BasicDiffMethod diffMethod) {
         StyleClassedTextArea jabrefTextArea = createConfiguredTextArea();
         StyleClassedTextArea diskTextArea = createConfiguredTextArea();
 
@@ -94,20 +97,16 @@ public final class MetadataChangeDetailsView extends DatabaseChangeDetailsView {
         jabrefTextArea.replaceText(jabRefContent);
         diskTextArea.replaceText(diskContent);
 
-        SplitDiffHighlighter highlighter = new SplitDiffHighlighter(
-                jabrefTextArea,
-                diskTextArea,
-                DiffHighlighter.BasicDiffMethod.CHARS
-        );
+        SplitDiffHighlighter highlighter = new SplitDiffHighlighter(jabrefTextArea, diskTextArea, diffMethod);
         highlighter.highlight();
 
         ScrollPane leftScrollPane = createScrollPane(jabrefTextArea);
         ScrollPane rightScrollPane = createScrollPane(diskTextArea);
 
         Label inJabRef = new Label(leftLabelText);
-        inJabRef.getStyleClass().add("lib-change-header");
+        inJabRef.getStyleClass().addAll(StyleClasses.CHANGE_VIEW_HEADER);
         Label onDisk = new Label(rightLabelText);
-        onDisk.getStyleClass().add("lib-change-header");
+        onDisk.getStyleClass().addAll(StyleClasses.CHANGE_VIEW_HEADER);
 
         VBox leftContainer = new VBox(5, inJabRef, leftScrollPane);
         VBox rightContainer = new VBox(5, onDisk, rightScrollPane);
@@ -117,7 +116,7 @@ public final class MetadataChangeDetailsView extends DatabaseChangeDetailsView {
         splitPane.setDividerPositions(0.5);
 
         Label legendLabel = new Label(Localization.lang("Red: Removed, Blue: Changed, Green: Added"));
-        legendLabel.getStyleClass().add("lib-change-legend");
+        legendLabel.getStyleClass().addAll(StyleClasses.CHANGE_VIEW_LEGEND);
 
         VBox resultContainer = new VBox(splitPane, legendLabel);
         resultContainer.setSpacing(5);
